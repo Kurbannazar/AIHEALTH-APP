@@ -1,108 +1,66 @@
+
 import streamlit as st
-import pandas as pd
-import numpy as np
 
-# Sayfa ayarlarını yapalım
-st.set_page_config(page_title="AIHEALTH | Cyber-Tech Edition", page_icon="⚡", layout="wide")
+# Uygulama sayfa ayarları
+st.set_page_config(page_title="AIHEALTH Pro", page_icon="🚑", layout="centered")
 
-# --- NEON & DARK MOD TASARIMI (CSS) ---
+# --- PROFESYONEL TASARIM (CSS) ---
 st.markdown("""
     <style>
-    /* Ana Arka Planı Simsiyah Yapalım */
-    .stApp {
-        background-color: #0E1117;
-        color: #00FBFF; /* Parlak Turkuaz Yazı Tipi */
-    }
-    
-    /* Yan Paneli Koyu Yapalım */
-    [data-testid="stSidebar"] {
-        background-color: #161B22;
-        border-right: 2px solid #00FBFF;
-    }
-
-    /* Kartları Parlatalım */
-    div.stAlert {
-        background-color: #161B22;
-        border: 1px solid #00FBFF;
-        box-shadow: 0px 0px 15px #00FBFF;
-        color: white;
-    }
-
-    /* Parlak Acil Durum Butonu */
-    .stButton>button {
-        width: 100%;
-        border-radius: 10px;
-        height: 3.5em;
-        background-color: #0E1117;
-        color: #FF003C !important; /* Parlak Neon Kırmızı */
-        border: 2px solid #FF003C !important;
-        font-weight: bold;
-        box-shadow: 0px 0px 10px #FF003C;
-        transition: 0.3s;
-    }
-    
-    .stButton>button:hover {
-        background-color: #FF003C !important;
-        color: white !important;
-        box-shadow: 0px 0px 25px #FF003C;
-    }
-
-    /* Başlık Parlaması */
-    h1 {
-        text-shadow: 0px 0px 10px #00FBFF;
-        color: #00FBFF;
-    }
+    .main { background-color: #f8f9fa; }
+    .stButton>button { width: 100%; border-radius: 15px; height: 3.5em; background-color: #007bff; color: white; font-weight: bold; border: none; }
+    .stButton>button:hover { background-color: #0056b3; border: none; }
+    div[data-testid="stMetricValue"] { font-size: 20px; color: #d9534f; }
+    .sidebar .sidebar-content { background-color: #ffffff; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- ÜST BİLGİ ---
-st.title("⚡ AIHEALTH : NEXT-GEN MEDICAL AI")
-st.write("---")
-
-# --- YAN PANEL ---
+# --- YAN MENÜ (SIDEBAR) ---
 with st.sidebar:
-    st.markdown("<h2 style='text-align: center; color: #00FBFF;'>KONTROL MERKEZİ</h2>", unsafe_allow_html=True)
-    st.write("")
-    if st.button("🚨 ACİL DURUM SİNYALİ (112)"):
-        st.snow() # Ekranda efekt çıksın
-        st.error("ACİL DURUM MODU AKTİF: Konum Bilgisi Gönderiliyor...")
+    st.image("https://cdn-icons-png.flaticon.com/512/3004/3004451.png", width=100)
+    st.title("AIHEALTH")
+    st.write("Cebinizdeki Sağlık Rehberi")
+    st.markdown("---")
+    menu = st.radio("Menü", ["🏠 Ana Sayfa", "🤖 AI Sohbet", "📍 En Yakın Hastane", "🆘 İlk Yardım"])
+    st.markdown("---")
+    if st.button("🚨 ACİL DURUM: 112"):
+        st.error("112 Acil Servis aranıyor... (Simüle edildi)")
+
+# --- ANA SAYFA ---
+if menu == "🏠 Ana Sayfa":
+    st.title("Hoş Geldiniz, Kurbannazar")
+    st.write("Bugün size nasıl yardımcı olabilirim?")
     
-    st.write("")
-    menu = st.selectbox("Erişim Noktası", ["📊 Sistem Özeti", "🧠 AI Tanı Analizi", "🏥 Yakın Hastaneler", "📖 İlk Yardım Arşivi"])
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(label="Sistem Durumu", value="Aktif")
+    with col2:
+        st.metric(label="AI Analiz", value="Hazır")
 
-# --- MODÜLLER ---
+    st.info("Bilgi: Belirtilerinizi yazmak için 'AI Sohbet' sekmesine geçebilirsiniz.")
 
-if menu == "📊 Sistem Özeti":
-    st.subheader("Hoş Geldiniz, Kurbannazar")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Sistem Gücü", "98%", "+2%")
-    col2.metric("AI Güven Skoru", "99.8", "Max")
-    col3.metric("Bölge", "Global / GPS")
+# --- AI SOHBET ---
+elif menu == "🤖 AI Sohbet":
+    st.subheader("🤖 Yapay Zeka Destekli Belirti Analizi")
+    st.write("Lütfen şikayetinizi detaylıca yazın.")
+    user_input = st.text_area("Örn: Şiddetli baş ağrısı ve ışığa duyarlılık var...", height=150)
+    if st.button("Analizi Başlat"):
+        with st.spinner('Analiz ediliyor...'):
+            st.success("Analiz Tamamlandı: Belirtileriniz migren ile uyumlu görünüyor. Lütfen bir nöroloğa danışın.")
+            st.warning("Not: Bu bir teşhis değil, sadece bilgilendirmedir.")
+
+# --- HARİTA ---
+elif menu == "📍 En Yakın Hastane":
+    st.subheader("📍 Yakınımdaki Sağlık Kuruluşları")
+    st.write("Mevcut konumunuza en yakın hastaneler listeleniyor.")
+    st.map() # Harita fonksiyonu
+
+# --- İLK YARDIM ---
+elif menu == "🆘 İlk Yardım":
+    st.subheader("🆘 Temel İlk Yardım Rehberi")
+    search = st.text_input("Konu Ara (Örn: Kanama, Bayılma)")
     
-    st.info("Sistem şu an tüm dünyada aktiftir. GPS üzerinden en yakın birimleri tarar.")
-
-elif menu == "🧠 AI Tanı Analizi":
-    st.subheader("🧠 Yapay Zeka Derin Analiz")
-    text = st.text_area("Analiz için veri girin:", placeholder="Şikayetlerinizi buraya yazın...")
-    if st.button("ANALİZİ BAŞLAT"):
-        st.write("📡 Bulut sunuculara bağlanılıyor...")
-        st.progress(85)
-        st.success("Analiz Sonucu: Sistemsel bir risk saptanmadı. Belirtiler yorgunluk kaynaklı olabilir.")
-
-elif menu == "🏥 Yakın Hastaneler":
-    st.subheader("🏥 En Yakın Sağlık Kuruluşları (GPS)")
-    st.write("Konumunuza en yakın hastaneler harita üzerinde parlıyor.")
-    
-    # Bu kısım rastgele noktalar üretir ama haritayı konumuna odaklar
-    map_data = pd.DataFrame(
-        np.random.randn(5, 2) / [50, 50] + [41.00, 28.97], # İstanbul genel koordinatı
-        columns=['lat', 'lon']
-    )
-    st.map(map_data)
-
-elif menu == "📖 İlk Yardım Arşivi":
-    st.subheader("📖 Dijital İlk Yardım Rehberi")
-    with st.expander("🧪 Kimyasal Yanıklar"):
-        st.write("Bol su ile yıkayın, alanı steril tutun.")
-    with st.expander("🦴 Kırık ve Çıkıklar"):
-        st.write("Bölgeyi sabitleyin, hareket ettirmeyin.")
+    with st.expander("🔥 Yanık Durumunda"):
+        st.write("Bölgeyi 15-20 dakika soğuk su altında tutun. Krem sürmeyin.")
+    with st.expander("🩸 Kanama Durumunda"):
+        st.write("Yaranın üzerine temiz bir bezle bastırın ve bölgeyi yukarı kaldırın.")
