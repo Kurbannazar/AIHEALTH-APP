@@ -1,66 +1,151 @@
 
 import streamlit as st
+from PIL import Image
+import pandas as pd
 
-# Uygulama sayfa ayarları
-st.set_page_config(page_title="AIHEALTH Pro", page_icon="🚑", layout="centered")
+# --- SAYFA AYARLARI ---
+st.set_page_config(page_title="AIHEALTH | Akıllı Sağlık Asistanı", page_icon="🌐", layout="wide")
 
-# --- PROFESYONEL TASARIM (CSS) ---
+# --- KRİTİK TASARIM (CSS) ---
+# Sunumdaki parlak siyah-mavi geçişini ve modern butonları buraya işledim.
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
-    .stButton>button { width: 100%; border-radius: 15px; height: 3.5em; background-color: #007bff; color: white; font-weight: bold; border: none; }
-    .stButton>button:hover { background-color: #0056b3; border: none; }
-    div[data-testid="stMetricValue"] { font-size: 20px; color: #d9534f; }
-    .sidebar .sidebar-content { background-color: #ffffff; }
+    /* Arka Plan: Siyah'tan Maviye Parlak Geçiş */
+    .stApp {
+        background: linear-gradient(135deg, #000000 0%, #001f3f 50%, #004a99 100%);
+        color: #ffffff;
+    }
+    
+    /* Başlık Alanı */
+    .main-title {
+        font-family: 'Urbanist', sans-serif;
+        font-size: 50px;
+        font-weight: 800;
+        text-align: center;
+        color: #00c6ff;
+        text-shadow: 0px 0px 15px rgba(0, 198, 255, 0.5);
+        margin-bottom: 5px;
+    }
+    
+    /* Kayıt Ol Butonu (Sağ Üst) */
+    .stButton>button[kind="secondary"] {
+        float: right;
+        border-radius: 30px;
+        background: rgba(255,255,255,0.1);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* Acil Durum Butonu (Kırmızı Parlak) */
+    div[data-testid="stVerticalBlock"] > div:nth-child(3) button {
+        background-color: #ff4b4b !important;
+        color: white !important;
+        font-weight: bold !important;
+        font-size: 24px !important;
+        height: 70px !important;
+        border-radius: 15px !important;
+        box-shadow: 0px 0px 20px rgba(255, 75, 75, 0.6) !important;
+        border: none !important;
+    }
+
+    /* AI ve Kamera Butonları (Mavi Cam Efekti) */
+    .stButton>button {
+        width: 100%;
+        border-radius: 15px;
+        height: 60px;
+        background: rgba(0, 198, 255, 0.1);
+        color: white;
+        border: 1px solid #00c6ff;
+        font-size: 18px;
+        transition: 0.3s;
+    }
+    .stButton>button:hover {
+        background: rgba(0, 198, 255, 0.3);
+        box-shadow: 0px 0px 15px #00c6ff;
+    }
+
+    /* Bilgi Kartları */
+    .info-card {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 20px;
+    }
+
+    /* Hukuki Metin (En Alt Kırmızı) */
+    .legal-footer {
+        color: #ff4b4b;
+        font-size: 13px;
+        text-align: center;
+        border-top: 1px solid rgba(255, 75, 75, 0.3);
+        margin-top: 50px;
+        padding-top: 20px;
+        font-weight: 500;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- YAN MENÜ (SIDEBAR) ---
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3004/3004451.png", width=100)
-    st.title("AIHEALTH")
-    st.write("Cebinizdeki Sağlık Rehberi")
-    st.markdown("---")
-    menu = st.radio("Menü", ["🏠 Ana Sayfa", "🤖 AI Sohbet", "📍 En Yakın Hastane", "🆘 İlk Yardım"])
-    st.markdown("---")
-    if st.button("🚨 ACİL DURUM: 112"):
-        st.error("112 Acil Servis aranıyor... (Simüle edildi)")
+# --- ÜST BAR (Logo ve Kayıt) ---
+col_l, col_r = st.columns([4, 1])
+with col_l:
+    # Logo Placeholder (Dünya Sağlık Örgütü benzeri asit mavisi ikon)
+    st.markdown("<h2 style='color: #00c6ff; margin:0;'>🌐 AIHEALTH</h2>", unsafe_allow_html=True)
+with col_r:
+    st.button("👤 Kayıt Ol", type="secondary")
 
-# --- ANA SAYFA ---
-if menu == "🏠 Ana Sayfa":
-    st.title("Hoş Geldiniz, Kurbannazar")
-    st.write("Bugün size nasıl yardımcı olabilirim?")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric(label="Sistem Durumu", value="Aktif")
-    with col2:
-        st.metric(label="AI Analiz", value="Hazır")
+# --- ANA BAŞLIK ---
+st.markdown("<div class='main-title'>AIHEALTH ASİSTANI</div>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#cbd5e1;'>Yapay Zeka ile Sağlıkta Triyaj ve Hızlı Müdahale Dönemi</p>", unsafe_allow_html=True)
 
-    st.info("Bilgi: Belirtilerinizi yazmak için 'AI Sohbet' sekmesine geçebilirsiniz.")
+# --- 🚨 ACİL DURUM BÖLÜMÜ ---
+st.write("") # Boşluk
+if st.button("🚨 ACİL DURUM: YARDIM ÇAĞIR"):
+    st.error("⚠️ SİNYAL GÖNDERİLDİ! Konumunuz 112 birimlerine ve yakınlarınıza iletiliyor. Lütfen hattan ayrılmayın.")
 
-# --- AI SOHBET ---
-elif menu == "🤖 AI Sohbet":
-    st.subheader("🤖 Yapay Zeka Destekli Belirti Analizi")
-    st.write("Lütfen şikayetinizi detaylıca yazın.")
-    user_input = st.text_area("Örn: Şiddetli baş ağrısı ve ışığa duyarlılık var...", height=150)
-    if st.button("Analizi Başlat"):
-        with st.spinner('Analiz ediliyor...'):
-            st.success("Analiz Tamamlandı: Belirtileriniz migren ile uyumlu görünüyor. Lütfen bir nöroloğa danışın.")
-            st.warning("Not: Bu bir teşhis değil, sadece bilgilendirmedir.")
+st.divider()
+
+# --- ETKİLEŞİM MERKEZİ ---
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("<div class='info-card'>", unsafe_allow_html=True)
+    st.subheader("💬 AI Sohbet & Ses")
+    st.write("Belirtilerinizi yazın veya sesli olarak söyleyin.")
+    user_input = st.text_input("Nasıl hissediyorsunuz?", placeholder="Örn: Şiddetli baş ağrım var...")
+    if st.button("🤖 AI Analizini Başlat"):
+        if user_input:
+            st.info("AIHEALTH Analiz Ediyor... Lütfen bekleyin.")
+            # Buraya AI Modeli Bağlanacak
+            st.success("Ön Değerlendirme: Durumunuz 'Düşük Öncelikli' görünüyor. Bol sıvı tüketin ve dinlenin. Acil servise gitmenize şu an gerek yoktur.")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col2:
+    st.markdown("<div class='info-card'>", unsafe_allow_html=True)
+    st.subheader("📸 Kamera ile Hasar Analizi")
+    st.write("Yara, döküntü veya hasarlı bölgeyi analiz edin.")
+    img_file = st.camera_input("Fotoğraf Çek")
+    if img_file:
+        st.warning("Görüntü işleniyor... Deri hasarı derinliği analiz ediliyor.")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # --- HARİTA ---
-elif menu == "📍 En Yakın Hastane":
-    st.subheader("📍 Yakınımdaki Sağlık Kuruluşları")
-    st.write("Mevcut konumunuza en yakın hastaneler listeleniyor.")
-    st.map() # Harita fonksiyonu
+st.write("")
+st.subheader("📍 En Yakın Acil Merkezleri")
+# Örnek Hastane Verileri
+map_data = pd.DataFrame({
+    'lat': [41.0082, 41.0150, 41.0200],
+    'lon': [28.9784, 28.9850, 28.9650]
+})
+st.map(map_data)
 
-# --- İLK YARDIM ---
-elif menu == "🆘 İlk Yardım":
-    st.subheader("🆘 Temel İlk Yardım Rehberi")
-    search = st.text_input("Konu Ara (Örn: Kanama, Bayılma)")
-    
-    with st.expander("🔥 Yanık Durumunda"):
-        st.write("Bölgeyi 15-20 dakika soğuk su altında tutun. Krem sürmeyin.")
-    with st.expander("🩸 Kanama Durumunda"):
-        st.write("Yaranın üzerine temiz bir bezle bastırın ve bölgeyi yukarı kaldırın.")
+# --- HUKUKİ FOOTER ---
+st.markdown("""
+    <div class="legal-footer">
+        <strong>ÖNEMLİ HUKUKİ UYARI:</strong> AIHEALTH bir yapay zeka bilgilendirme sistemidir. 
+        Kesinlikle bir doktor teşhisi veya tıbbi tedavi yerine geçmez. 
+        Gereksiz acil servis yoğunluğunu önlemek amacıyla rehberlik sunar. 
+        Hayati tehlike durumunda derhal 112'yi arayınız. 
+        Uygulama kullanımından doğabilecek kararların sorumluluğu kullanıcıya aittir.
+    </div>
+    """, unsafe_allow_html=True)
