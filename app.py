@@ -1,60 +1,81 @@
 import streamlit as st
 from PIL import Image
 
-# --- TASARIM (CSS) ---
-# Kutuları daha belirgin ve şık yapmak için küçük dokunuşlar
+# --- SAYFA AYARLARI ---
+st.set_page_config(page_title="AIHEALTH | Akıllı Sağlık", page_icon="🌐", layout="wide")
+
+# --- KRİTİK TASARIM (CSS) ---
 st.markdown("""
     <style>
+    .stApp { background: linear-gradient(135deg, #000000 0%, #001f3f 50%, #004a99 100%); color: white; }
     .stTextArea textarea {
         background-color: rgba(255, 255, 255, 0.05) !important;
         color: white !important;
         border: 1px solid #00c6ff !important;
         border-radius: 15px !important;
+        font-size: 18px !important;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 15px;
+        height: 60px;
+        background: #00c6ff;
+        color: black;
+        font-weight: bold;
+        font-size: 20px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: #00c6ff;'>🌐 AIHEALTH ASİSTANI</h1>", unsafe_allow_html=True)
+# --- ANALİZ FONKSİYONU (Hata Almamak İçin Dosyanın İçinde) ---
+def akilli_analiz(mesaj):
+    m = mesaj.lower()
+    if any(k in m for k in ["kırıldı", "kırık", "çatlak", "çıktı"]):
+        return {"baslik": "🚨 ACİL: KIRIK ŞÜPHESİ", "mesaj": "Bölgeyi ASLA KIPIRDATMAYIN ve üzerine basmayın. Hemen en yakın acile başvurun.", "renk": "error"}
+    elif any(k in m for k in ["kan", "kesik", "kesildi"]):
+        return {"baslik": "⚠️ KANAMA MÜDAHALESİ", "mesaj": "Temiz bir bezle baskı uygulayın. Kanama durmazsa dikiş gerekebilir.", "renk": "warning"}
+    elif any(k in m for k in ["kafa", "başım", "ağrı"]):
+        return {"baslik": "💧 HAFİF BELİRTİ", "mesaj": "Dinlenin ve bol su için. Şiddetliyse doktora danışın.", "renk": "success"}
+    else:
+        return {"baslik": "🔍 ANALİZ", "mesaj": "Lütfen şikayetinizi detaylandırın. Şu an için genel bir takip önerilir.", "renk": "info"}
 
-# --- 1. ŞİKAYET BÖLÜMÜ (Geniş ve Aşağı Doğru Uzun) ---
-st.subheader("📝 Şikayetiniz Nedir?")
-# height=200 yaparak kutuyu aşağıya doğru genişlettik
+# --- ARAYÜZ BAŞLANGIÇ ---
+st.markdown("<h1 style='text-align: center; color: #00c6ff;'>🌐 AIHEALTH</h1>", unsafe_allow_html=True)
+
+# 1. GENİŞ ŞİKAYET KUTUSU
+st.subheader("📝 Şikayetinizi Detaylıca Yazın")
 sikayet = st.text_area(
-    "Lütfen nasıl hissettiğinizi veya yaralanmanın nasıl olduğunu detaylıca anlatın:", 
-    placeholder="Örn: Sol ayağımın üzerine düştüm, şu an dizim çok ağrıyor ve şişmeye başladı. Hareket ettiremiyorum...",
-    height=200
+    "", 
+    placeholder="Örn: Sol ayağımın üzerine düştüm, dizim çok fena ağrıyor...",
+    height=250 # Aşağıya doğru genişlik
 )
 
 if st.button("ANALİZİ BAŞLAT"):
     if sikayet:
-        # Daha önce yazdığımız 'akilli_analiz' fonksiyonunu burada çağırıyoruz
-        from logic import akilli_analiz # Eğer fonksiyon farklı dosyadaysa
-        res = akilli_analiz(sikayet) 
-        
-        st.markdown(f"### {res['baslik']}")
-        if res["renk"] == "error": st.error(res["mesaj"])
-        elif res["renk"] == "warning": st.warning(res["mesaj"])
-        else: st.success(res["mesaj"])
+        res = akilli_analiz(sikayet)
+        if res["renk"] == "error": st.error(f"### {res['baslik']}\n\n{res['mesaj']}")
+        elif res["renk"] == "warning": st.warning(f"### {res['baslik']}\n\n{res['mesaj']}")
+        else: st.success(f"### {res['baslik']}\n\n{res['mesaj']}")
     else:
-        st.warning("Analiz için lütfen bir açıklama yazın.")
+        st.warning("Lütfen bir şikayet yazın.")
 
 st.divider()
 
-# --- 2. KAMERA VE DOSYA YÜKLEME (Daha Küçük ve Yan Yana) ---
-st.subheader("📸 Görsel Kanıt Ekleyin")
+# 2. KOMPAKT KAMERA VE YÜKLEME
+st.subheader("📸 Görsel Analiz (Opsiyonel)")
 col1, col2 = st.columns(2)
 
 with col1:
-    # Fotoğraf Çekme (Küçük ve sadece buton gibi görünecek)
-    cam_data = st.camera_input("Fotoğraf Çek", label_visibility="visible")
+    cam_data = st.camera_input("Fotoğraf Çek")
 
 with col2:
-    # Dosya Yükleme (Klasik yükleme kutusu)
-    file_data = st.file_uploader("Galeriden Seç", type=['jpg', 'png', 'jpeg'])
+    file_data = st.file_uploader("Dosya Yükle", type=['jpg', 'png', 'jpeg'])
 
-# Görsel önizleme (Ekranı kaplamaması için boyutunu sınırladık)
+# Görsel Önizleme
 final_image = cam_data if cam_data else file_data
-
 if final_image:
-    st.image(final_image, caption="Yüklenen Görsel", width=250)
-    st.info("AIHEALTH: Görsel başarıyla alındı. Teşhis için analiz ediliyor...")
+    st.image(final_image, caption="Yüklenen Görsel", width=300)
+    st.info("AIHEALTH: Görsel alındı, doku hasarı kontrol ediliyor.")
+
+# 3. YASAL UYARI
+st.markdown("<br><p style='color:red; text-align:center; font-size:12px;'>UYARI: Bu bir yapay zeka asistanıdır. Acil durumlarda 112'yi arayınız.</p>", unsafe_allow_html=True)
