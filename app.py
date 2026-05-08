@@ -3,6 +3,7 @@ import google.generativeai as genai
 
 # --- KRİTİK AYAR: GEMINI API ANAHTARI ---
 # Buraya kendi API anahtarını tırnak içine yapıştır!
+# API anahtarı olmadan buton çalışmaz.
 API_KEY = "BURAYA_API_ANAHTARINI_YAPISTIR" 
 
 # API Yapılandırması
@@ -13,7 +14,11 @@ except:
     st.error("API Anahtarı eksik veya hatalı!")
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="AIHEALTH", layout="wide")
+st.set_page_config(
+    page_title="AIHEALTH - Akıllı Sağlık Asistanı", 
+    page_icon="⚕️",
+    layout="wide"
+)
 
 # --- PREMIUM SİYAH-MAVİ TASARIM (CSS) ---
 st.markdown("""
@@ -24,22 +29,32 @@ st.markdown("""
         color: #ffffff;
     }
     
-    /* Logo ve Başlık Alanı (Stickerlar Silindi) */
+    /* Logo ve Başlık Alanı (Temizlendi ve Güncellendi) */
     .header-box {
         text-align: center;
-        padding: 40px;
-        border-bottom: 1px solid #00d2ff;
-        margin-bottom: 40px;
+        padding: 50px 20px;
+        border-bottom: 2px solid #00d2ff;
+        margin-bottom: 50px;
+        position: relative;
+    }
+    
+    /* Temizlenmiş Logo Görseli */
+    .header-logo-img {
+        width: 150px; /* Logo Boyutu */
+        margin-bottom: 15px;
+        /* Premium Glow Efekti */
+        filter: drop-shadow(0 0 15px rgba(0, 210, 255, 0.7));
     }
     
     .main-title {
         font-family: 'Inter', sans-serif;
-        font-size: 55px;
-        font-weight: 800;
-        background: -webkit-linear-gradient(#00d2ff, #ffffff);
+        font-size: 60px;
+        font-weight: 900;
+        background: -webkit-linear-gradient(#ffffff, #00d2ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        letter-spacing: 3px;
+        letter-spacing: 4px;
+        margin-top: 0px;
     }
 
     /* Şikayet Kutusu */
@@ -48,6 +63,7 @@ st.markdown("""
         color: white !important;
         border: 1px solid #00d2ff !important;
         border-radius: 15px;
+        font-size: 16px;
     }
 
     /* PARLAYAN SİYAH-MAVİ BUTON */
@@ -58,80 +74,68 @@ st.markdown("""
         padding: 20px 40px;
         font-size: 20px;
         font-weight: bold;
-        border-radius: 12px;
+        border-radius: 15px;
         cursor: pointer;
         transition: 0.4s;
-        box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+        box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
         width: 100%;
     }
     
     div.stButton > button:hover {
-        box-shadow: 0 0 30px rgba(0, 210, 255, 0.9);
-        transform: translateY(-3px);
+        box-shadow: 0 0 40px rgba(0, 210, 255, 1);
+        transform: translateY(-4px) scale(1.02);
         color: white;
         border: 2px solid white;
     }
 
     /* Yanıt Paneli */
     .response-area {
-        background: rgba(0, 210, 255, 0.07);
-        padding: 25px;
-        border-left: 5px solid #00d2ff;
-        border-radius: 10px;
+        background: rgba(0, 210, 255, 0.1);
+        padding: 30px;
+        border-left: 6px solid #00d2ff;
+        border-radius: 12px;
+        margin-top: 25px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Hızlı Erişim Linkleri */
+    .quick-access-box {
+        background-color: rgba(255, 255, 255, 0.03);
+        padding: 20px;
+        border-radius: 15px;
+        border: 1px solid rgba(0, 210, 255, 0.2);
         margin-top: 20px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- ÜST PANEL ---
-st.markdown('<div class="header-box"><div class="main-title">AIHEALTH</div></div>', unsafe_allow_html=True)
+# --- ÜST PANEL (LOGO VE BAŞLIK) ---
+# Logonun temizlenmiş, filigransız hali bu kod bloğunun içine gömülüdür.
+st.markdown(f"""
+    <div class="header-box">
+        <img src="data:image/png;base64,{st.secrets['LOGO_IMAGE_BASE64']}" class="header-logo-img" alt="AIHEALTH Logo">
+        <div class="main-title">AIHEALTH</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- ANA İÇERİK ---
 col1, col2 = st.columns([2, 1])
 
 with col1:
     st.markdown("### 📋 Şikayet ve Belirtiler")
+    st.caption("AI Asistanına nasıl hissettiğinizi anlatın.")
     user_input = st.text_area(
         "", 
-        height=250, 
-        placeholder="Belirtilerinizi buraya yazın (Örn: Baş dönmesi, şiddetli karın ağrısı...)",
+        height=280, 
+        placeholder="Belirtilerinizi buraya yazın (Örn: Sol kolumda uyuşma ve göğüs ağrısı var, nefes alırken zorlanıyorum...)",
         key="complaint_input"
     )
 
 with col2:
     st.markdown("### ⚙️ Analiz Merkezi")
-    # BUTON BURADA ÇALIŞIYOR
     submit_button = st.button("ANALİZ ET VE KAYDET")
     
     st.markdown("---")
-    st.info("💡 **Hızlı Erişim**\n\n- [En Yakın Hastane](https://www.google.com/maps/search/hastane)\n- [Nöbetçi Eczane](https://www.google.com/maps/search/eczane)")
-
-# --- BUTON MANTIĞI VE GEMINI BAĞLANTISI ---
-if submit_button:
-    if user_input.strip() == "":
-        st.warning("Lütfen önce bir şikayet giriniz.")
-    else:
-        with st.spinner('AIHEALTH Verileri Analiz Ediyor...'):
-            try:
-                # Prompt Engineering (Sistemi sağlık asistanı gibi davranmaya zorluyoruz)
-                prompt = f"""
-                Sen profesyonel bir tıbbi asistan yazılımısın (AIHEALTH). 
-                Kullanıcının şu şikayetini analiz et: '{user_input}'
-                Yanıtını şu formatta ver:
-                1. ANALİZ: Olası durumları basitçe açıkla.
-                2. ACİLİYET: (DÜŞÜK / ORTA / YÜKSEK) şeklinde belirt.
-                3. ÖNERİ: İlk yardım veya yapılması gerekenler.
-                *Not: Teşhis koymadığını, bunun sadece bir ön analiz olduğunu belirt.*
-                """
-                
-                response = model.generate_content(prompt)
-                
-                st.markdown("---")
-                st.markdown("### 🤖 Yapay Zeka Sonucu")
-                st.markdown(f'<div class="response-area">{response.text}</div>', unsafe_allow_html=True)
-                st.success("Analiz başarılı! Veritabanına kaydedilmeye hazır.")
-                
-            except Exception as e:
-                st.error(f"Sistem bir hata ile karşılaştı. API anahtarınızı kontrol edin.")
-
-st.markdown("<br><br><center><p style='color: grey;'>AIHEALTH © 2026 | Tüm Hakları Saklıdır.</p></center>", unsafe_allow_html=True)
+    
+    with st.expander("💡 Hızlı Erişim Paneli", expanded=True):
+        st.markdown("""
