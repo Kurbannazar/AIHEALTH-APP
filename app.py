@@ -1,141 +1,123 @@
 import streamlit as st
 import google.generativeai as genai
+import os
 
-# --- KRİTİK AYAR: GEMINI API ANAHTARI ---
-# Buraya kendi API anahtarını tırnak içine yapıştır!
-# API anahtarı olmadan buton çalışmaz.
-API_KEY = "BURAYA_API_ANAHTARINI_YAPISTIR" 
+# --- 1. GEMINI YAPILANDIRMASI ---
+API_KEY = "BURAYA_ANAHTARINI_YAPISTIR" # Anahtarı buraya ekle!
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-# API Yapılandırması
-try:
-    genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash') # Hızlı ve güncel model
-except:
-    st.error("API Anahtarı eksik veya hatalı!")
+# --- 2. SAYFA AYARLARI ---
+st.set_page_config(page_title="AIHEALTH", layout="wide")
 
-# --- SAYFA AYARLARI ---
-st.set_page_config(
-    page_title="AIHEALTH - Akıllı Sağlık Asistanı", 
-    page_icon="⚕️",
-    layout="wide"
-)
-
-# --- PREMIUM SİYAH-MAVİ TASARIM (CSS) ---
+# --- 3. PREMIUM TASARIM (CSS) ---
 st.markdown("""
     <style>
-    /* Ana Ekran */
     .stApp {
         background: linear-gradient(180deg, #020205, #001529);
-        color: #ffffff;
+        color: white;
     }
     
-    /* Logo ve Başlık Alanı (Temizlendi ve Güncellendi) */
-    .header-box {
-        text-align: center;
-        padding: 50px 20px;
-        border-bottom: 2px solid #00d2ff;
-        margin-bottom: 50px;
-        position: relative;
-    }
-    
-    /* Temizlenmiş Logo Görseli */
-    .header-logo-img {
-        width: 150px; /* Logo Boyutu */
-        margin-bottom: 15px;
-        /* Premium Glow Efekti */
-        filter: drop-shadow(0 0 15px rgba(0, 210, 255, 0.7));
+    /* Logo Konumlandırma ve Temizleme */
+    .logo-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: -50px;
     }
     
     .main-title {
-        font-family: 'Inter', sans-serif;
-        font-size: 60px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 65px;
         font-weight: 900;
         background: -webkit-linear-gradient(#ffffff, #00d2ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        letter-spacing: 4px;
-        margin-top: 0px;
+        letter-spacing: 5px;
+        margin-top: -20px;
     }
 
-    /* Şikayet Kutusu */
+    /* Şikayet Alanı */
     .stTextArea textarea {
-        background-color: rgba(255, 255, 255, 0.05) !important;
+        background-color: rgba(255, 255, 255, 0.07) !important;
         color: white !important;
         border: 1px solid #00d2ff !important;
         border-radius: 15px;
-        font-size: 16px;
     }
 
-    /* PARLAYAN SİYAH-MAVİ BUTON */
+    /* PARLAYAN BUTON */
     div.stButton > button {
         background: linear-gradient(45deg, #000000, #004e92);
         color: #00d2ff;
         border: 2px solid #00d2ff;
-        padding: 20px 40px;
+        height: 60px;
         font-size: 20px;
         font-weight: bold;
         border-radius: 15px;
-        cursor: pointer;
-        transition: 0.4s;
-        box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
+        box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
         width: 100%;
+        transition: 0.3s;
     }
     
     div.stButton > button:hover {
-        box-shadow: 0 0 40px rgba(0, 210, 255, 1);
-        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 0 40px rgba(0, 210, 255, 0.8);
         color: white;
-        border: 2px solid white;
-    }
-
-    /* Yanıt Paneli */
-    .response-area {
-        background: rgba(0, 210, 255, 0.1);
-        padding: 30px;
-        border-left: 6px solid #00d2ff;
-        border-radius: 12px;
-        margin-top: 25px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        transform: scale(1.02);
     }
     
-    /* Hızlı Erişim Linkleri */
-    .quick-access-box {
-        background-color: rgba(255, 255, 255, 0.03);
-        padding: 20px;
+    /* Yanıt Kutusu */
+    .ai-response {
+        background: rgba(0, 210, 255, 0.1);
+        padding: 25px;
         border-radius: 15px;
-        border: 1px solid rgba(0, 210, 255, 0.2);
-        margin-top: 20px;
+        border-left: 5px solid #00d2ff;
+        line-height: 1.6;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- ÜST PANEL (LOGO VE BAŞLIK) ---
-# Logonun temizlenmiş, filigransız hali bu kod bloğunun içine gömülüdür.
-st.markdown(f"""
-    <div class="header-box">
-        <img src="data:image/png;base64,{st.secrets['LOGO_IMAGE_BASE64']}" class="header-logo-img" alt="AIHEALTH Logo">
-        <div class="main-title">AIHEALTH</div>
-    </div>
-    """, unsafe_allow_html=True)
+# --- 4. ÜST KISIM: LOGO VE İSİM ---
+st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+# Dosya adının tam olarak eşleştiğinden emin ol (Aı heal.jpg)
+if os.path.exists("Aı heal.jpg"):
+    st.image("Aı heal.jpg", width=200) 
+else:
+    st.write("⚠️ Logo dosyası bulunamadı! (Dosya adını kontrol et)")
 
-# --- ANA İÇERİK ---
+st.markdown('<div class="main-title">AIHEALTH</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# --- 5. ARA YÜZ VE FONKSİYONLAR ---
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    st.markdown("### 📋 Şikayet ve Belirtiler")
-    st.caption("AI Asistanına nasıl hissettiğinizi anlatın.")
-    user_input = st.text_area(
-        "", 
-        height=280, 
-        placeholder="Belirtilerinizi buraya yazın (Örn: Sol kolumda uyuşma ve göğüs ağrısı var, nefes alırken zorlanıyorum...)",
-        key="complaint_input"
-    )
+    st.markdown("### 📋 Belirtilerinizi Yazın")
+    complaint = st.text_area("", placeholder="Örn: Ani başlayan göğüs ağrısı...", height=250)
 
 with col2:
-    st.markdown("### ⚙️ Analiz Merkezi")
-    submit_button = st.button("ANALİZ ET VE KAYDET")
-    
+    st.markdown("### ⚙️ İşlemler")
+    # BUTONUN ÇALIŞTIĞI ANA NOKTA
+    if st.button("ANALİZ ET VE KAYDET"):
+        if complaint:
+            with st.spinner('AI Analiz Ediyor...'):
+                try:
+                    full_prompt = f"Sen profesyonel bir sağlık asistanısın. Şu şikayeti analiz et ve ilk yardım önerisi ver: {complaint}"
+                    response = model.generate_content(full_prompt)
+                    
+                    st.session_state['ai_result'] = response.text
+                except Exception as e:
+                    st.error("API hatası! Anahtarı kontrol edin.")
+        else:
+            st.warning("Lütfen bir şikayet yazın.")
+
     st.markdown("---")
-    
-    with st.expander("💡 Hızlı Erişim Paneli", expanded=True):
-        st.markdown("""
+    st.markdown("📍 [En Yakın Hastaneler](https://www.google.com/maps/search/hastane)")
+    st.markdown("💊 [Nöbetçi Eczaneler](https://www.google.com/maps/search/eczane)")
+
+# --- 6. SONUÇ EKRANI ---
+if 'ai_result' in st.session_state:
+    st.markdown("### 🤖 Analiz Sonucu")
+    st.markdown(f'<div class="ai-response">{st.session_state["ai_result"]}</div>', unsafe_allow_html=True)
+
+st.markdown("<br><center>AIHEALTH © 2026</center>", unsafe_allow_html=True)
+ 
