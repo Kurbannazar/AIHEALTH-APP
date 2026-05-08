@@ -1,123 +1,204 @@
 import streamlit as st
 import google.generativeai as genai
+from PIL import Image
 import os
+from streamlit_js_eval import streamlit_js_eval
+import time
 
-# --- 1. GEMINI YAPILANDIRMASI ---
-API_KEY = "BURAYA_ANAHTARINI_YAPISTIR" # Anahtarı buraya ekle!
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Sayfa yapılandırması
+st.set_page_config(
+    page_title="AIHEALTH - Profesyonel Sağlık Asistanı",
+    page_icon=None,
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# --- 2. SAYFA AYARLARI ---
-st.set_page_config(page_title="AIHEALTH", layout="wide")
-
-# --- 3. PREMIUM TASARIM (CSS) ---
+# Özel CSS - Premium Tasarım Dili
 st.markdown("""
     <style>
+    /* Ana Arka Plan */
     .stApp {
-        background: linear-gradient(180deg, #020205, #001529);
-        color: white;
+        background: linear-gradient(180deg, #020205 0%, #001529 100%);
+        color: #ffffff;
     }
     
-    /* Logo Konumlandırma ve Temizleme */
-    .logo-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: -50px;
-    }
-    
+    /* Başlık ve Glow Efekti */
     .main-title {
-        font-family: 'Poppins', sans-serif;
-        font-size: 65px;
-        font-weight: 900;
-        background: -webkit-linear-gradient(#ffffff, #00d2ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        font-family: 'Inter', sans-serif;
+        font-size: 4rem;
+        font-weight: 800;
+        text-align: center;
+        color: #ffffff;
+        text-shadow: 0 0 15px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.4);
+        margin-bottom: 0px;
         letter-spacing: 5px;
-        margin-top: -20px;
     }
-
-    /* Şikayet Alanı */
-    .stTextArea textarea {
-        background-color: rgba(255, 255, 255, 0.07) !important;
+    
+    /* Kayıt Ol Butonu Tasarımı */
+    .stButton > button {
+        background-color: transparent;
+        color: #00d4ff;
+        border: 1px solid #00d4ff;
+        border-radius: 5px;
+        padding: 10px 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+    }
+    .stButton > button:hover {
+        background-color: rgba(0, 212, 255, 0.1);
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        border: 1px solid #ffffff;
+        color: #ffffff;
+    }
+    
+    /* Acil Durum Butonu */
+    .emergency-btn > button {
+        background-color: #ff4b4b !important;
         color: white !important;
-        border: 1px solid #00d2ff !important;
-        border-radius: 15px;
-    }
-
-    /* PARLAYAN BUTON */
-    div.stButton > button {
-        background: linear-gradient(45deg, #000000, #004e92);
-        color: #00d2ff;
-        border: 2px solid #00d2ff;
-        height: 60px;
-        font-size: 20px;
-        font-weight: bold;
-        border-radius: 15px;
-        box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
-        width: 100%;
-        transition: 0.3s;
+        border: none !important;
+        font-size: 1.5rem !important;
+        font-weight: bold !important;
+        padding: 20px 50px !important;
+        border-radius: 50px !important;
+        box-shadow: 0 0 20px rgba(255, 75, 75, 0.6) !important;
+        animation: pulse 2s infinite;
     }
     
-    div.stButton > button:hover {
-        box-shadow: 0 0 40px rgba(0, 210, 255, 0.8);
-        color: white;
-        transform: scale(1.02);
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7); }
+        70% { box-shadow: 0 0 0 20px rgba(255, 75, 75, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0); }
     }
     
-    /* Yanıt Kutusu */
-    .ai-response {
-        background: rgba(0, 210, 255, 0.1);
-        padding: 25px;
-        border-radius: 15px;
-        border-left: 5px solid #00d2ff;
-        line-height: 1.6;
+    /* Metin Alanı ve Girdiler */
+    .stTextArea textarea {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: white !important;
+        border: 1px solid rgba(0, 212, 255, 0.3) !important;
     }
+    
+    /* Hukuki Uyarı */
+    .legal-disclaimer {
+        color: #ff4b4b;
+        font-size: 0.8rem;
+        text-align: center;
+        margin-top: 10px;
+        font-weight: 500;
+    }
+    
+    /* Spinner ve Animasyonlar */
+    .stSpinner > div {
+        border-top-color: #00d4ff !important;
+    }
+    
+    /* Blokları Gizle */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. ÜST KISIM: LOGO VE İSİM ---
-st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-# Dosya adının tam olarak eşleştiğinden emin ol (Aı heal.jpg)
-if os.path.exists("Aı heal.jpg"):
-    st.image("Aı heal.jpg", width=200) 
-else:
-    st.write("⚠️ Logo dosyası bulunamadı! (Dosya adını kontrol et)")
-
-st.markdown('<div class="main-title">AIHEALTH</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 5. ARA YÜZ VE FONKSİYONLAR ---
-col1, col2 = st.columns([2, 1])
+# Üst Bölüm: Kayıt Ol | Logo | Başlık
+col1, col2, col3 = st.columns([1, 2, 1])
 
 with col1:
-    st.markdown("### 📋 Belirtilerinizi Yazın")
-    complaint = st.text_area("", placeholder="Örn: Ani başlayan göğüs ağrısı...", height=250)
+    st.markdown("<div style='padding-top: 50px;'></div>", unsafe_allow_html=True)
+    if st.button("Kayıt Ol"):
+        st.info("Kayıt sistemi yakında aktif edilecektir.")
 
 with col2:
-    st.markdown("### ⚙️ İşlemler")
-    # BUTONUN ÇALIŞTIĞI ANA NOKTA
-    if st.button("ANALİZ ET VE KAYDET"):
-        if complaint:
-            with st.spinner('AI Analiz Ediyor...'):
-                try:
-                    full_prompt = f"Sen profesyonel bir sağlık asistanısın. Şu şikayeti analiz et ve ilk yardım önerisi ver: {complaint}"
-                    response = model.generate_content(full_prompt)
-                    
-                    st.session_state['ai_result'] = response.text
-                except Exception as e:
-                    st.error("API hatası! Anahtarı kontrol edin.")
+    if os.path.exists("ai_heal.jpg"):
+        st.image("ai_heal.jpg", width=200, use_container_width=False)
+    st.markdown("<h1 class='main-title'>AIHEALTH</h1>", unsafe_allow_html=True)
+
+# Gemini Yapılandırması (Kullanıcı anahtarı yoksa Manus'un OpenAI uyumlu Gemini modelini simüle ederiz veya placeholder bırakırız)
+# Gerçek uygulamada st.secrets veya environment variable kullanılmalıdır.
+API_KEY = os.environ.get("GOOGLE_API_KEY", "") # Kullanıcıdan alınabilir
+if API_KEY:
+    genai.configure(api_key=API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    st.warning("Gemini API anahtarı bulunamadı. Lütfen yapılandırın.")
+
+# Şikayet Giriş Alanı
+st.markdown("### Şikayetinizi Belirtin")
+complaint = st.text_area("Belirtilerinizi detaylıca yazın...", height=150, placeholder="Örn: Şiddetli baş ağrısı, halsizlik ve hafif ateş...")
+
+# Medya Araçları Butonları
+m_col1, m_col2, m_col3 = st.columns([1, 1, 4])
+with m_col1:
+    camera_photo = st.camera_input("Kamera")
+with m_col2:
+    uploaded_file = st.file_uploader("Fotoğraf Yükle", type=['jpg', 'jpeg', 'png'])
+
+# AI Analiz Fonksiyonu
+def analyze_health(text, image=None):
+    if not API_KEY:
+        return "Hata: Gemini API anahtarı eksik. Lütfen yapılandırın."
+    
+    prompt = f"""
+    Sen profesyonel bir medikal yapay zeka asistanısın. Kullanıcının şu şikayetini analiz et:
+    Şikayet: {text}
+    
+    Eğer bir görsel sağlandıysa, görseldeki belirtileri de dikkate al.
+    Yanıtını şu yapıda ver:
+    1. Olası Durumlar (Tıbbi teşhis değildir, sadece ihtimaller)
+    2. Önerilen Adımlar
+    3. Hangi Bölüme Gidilmeli?
+    
+    DİL: Türkçe. Üslup: Ciddi, profesyonel, medikal teknoloji odaklı.
+    """
+    
+    try:
+        if image:
+            img = Image.open(image)
+            response = model.generate_content([prompt, img])
         else:
-            st.warning("Lütfen bir şikayet yazın.")
+            response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Analiz sırasında bir hata oluştu: {str(e)}"
 
-    st.markdown("---")
-    st.markdown("📍 [En Yakın Hastaneler](https://www.google.com/maps/search/hastane)")
-    st.markdown("💊 [Nöbetçi Eczaneler](https://www.google.com/maps/search/eczane)")
+# Analiz Tetikleyici
+if complaint:
+    with st.spinner("AIHEALTH Verileri Analiz Ediyor..."):
+        analysis_result = analyze_health(complaint, camera_photo or uploaded_file)
+        st.markdown("---")
+        st.markdown("### AI Ön Analiz Raporu")
+        st.markdown(analysis_result)
+        st.markdown(f"<p class='legal-disclaimer'>Bu bir yapay zeka analizidir, tıbbi teşhis yerine geçmez. Acil durumlarda lütfen 112'yi arayın veya en yakın sağlık kuruluşuna başvurun.</p>", unsafe_allow_html=True)
 
-# --- 6. SONUÇ EKRANI ---
-if 'ai_result' in st.session_state:
-    st.markdown("### 🤖 Analiz Sonucu")
-    st.markdown(f'<div class="ai-response">{st.session_state["ai_result"]}</div>', unsafe_allow_html=True)
+st.markdown("---")
 
-st.markdown("<br><center>AIHEALTH © 2026</center>", unsafe_allow_html=True)
- 
+# Konum Bazlı Fonksiyonlar
+st.markdown("### Hızlı Erişim")
+loc_col1, loc_col2 = st.columns(2)
+
+# JS ile konum alma
+location = streamlit_js_eval(js_expressions="navigator.geolocation.getCurrentPosition((pos) => { return {lat: pos.coords.latitude, lon: pos.coords.longitude} })", key="location")
+
+if loc_col1.button("En Yakın Hastane"):
+    if location:
+        lat, lon = location['lat'], location['lon']
+        url = f"https://www.google.com/maps/search/hastane/@{lat},{lon},14z"
+        st.markdown(f'<meta http-equiv="refresh" content="0;URL=\'{url}\'">', unsafe_allow_html=True)
+    else:
+        st.info("Konum bilgisi alınıyor veya izin verilmedi. Lütfen bekleyin veya tarayıcı izinlerini kontrol edin.")
+
+if loc_col2.button("Nöbetçi Eczane"):
+    if location:
+        lat, lon = location['lat'], location['lon']
+        url = f"https://www.google.com/maps/search/nöbetçi+eczane/@{lat},{lon},14z"
+        st.markdown(f'<meta http-equiv="refresh" content="0;URL=\'{url}\'">', unsafe_allow_html=True)
+    else:
+        st.info("Konum bilgisi alınıyor...")
+
+# Acil Durum Butonu
+st.markdown("<br><br>", unsafe_allow_html=True)
+_, center_col, _ = st.columns([1, 2, 1])
+with center_col:
+    st.markdown('<div class="emergency-btn">', unsafe_allow_html=True)
+    if st.button("ACİL DURUM", key="emergency"):
+        st.error("ACİL DURUM SİNYALİ OLUŞTURULDU. LÜTFEN 112'Yİ ARAYIN!")
+    st.markdown('</div>', unsafe_allow_html=True)
