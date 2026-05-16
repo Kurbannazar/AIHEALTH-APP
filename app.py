@@ -1,117 +1,207 @@
 import streamlit as st
-import google.generativeai as genai
+import requests
+import json
+import time
 from datetime import datetime
+import google.generativeai as genai
+from PIL import Image
+import io
+import base64
+import folium
+from streamlit_folium import folium_static
+import os
 
-# --- SAYFA AYARLARI VE TASARIM ---
-st.set_page_config(page_title="AIHEALTH Pro", page_icon="🌐", layout="wide")
+# Sayfa yapılandırması
+st.set_page_config(
+    page_title="AIHEALTH - Sağlık Sistem Yardımcısı",
+    page_icon="🏥",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# Şık mavi-siyah geçişli tasarım ve parlayan butonlar için CSS
+# API Anahtarları (Gerçek uygulamada .env dosyasından yüklenmeli)
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY_HERE")
+GOOGLE_MAPS_API_KEY = st.secrets.get("GOOGLE_MAPS_API_KEY", "YOUR_GOOGLE_MAPS_API_KEY_HERE")
+
+# Gemini AI'yı yapılandır
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Özel CSS Stilleri
 st.markdown("""
-    <style>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .main {
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+        color: #ffffff;
+    }
+    
     .stApp {
-        background: linear-gradient(135deg, #000000 0%, #1a2a6c 100%);
-        color: white;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
     }
-    .stButton>button {
-        border-radius: 20px;
-        transition: 0.3s;
+    
+    /* Başlık Stilleri */
+    .main-title {
+        text-align: center;
+        font-size: 3.5rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #00b4d8, #0077b6, #03045e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 20px rgba(0, 180, 216, 0.3);
+        margin-bottom: 1rem;
     }
-    /* Mavi Parlayan Kayıt Butonu */
-    div[data-testid="stVerticalBlock"] > div:nth-child(1) button {
-        background-color: #007bff;
-        box-shadow: 0 0 15px #007bff;
+    
+    .subtitle {
+        text-align: center;
+        font-size: 1.2rem;
+        color: #90e0ef;
+        margin-bottom: 3rem;
+        font-weight: 300;
+    }
+    
+    /* Buton Stilleri */
+    .stButton > button {
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
         border: none;
-        color: white;
-    }
-    /* Kırmızı Parlayan Acil Butonu */
-    .emergency-btn button {
-        background-color: #ff0000 !important;
-        box-shadow: 0 0 20px #ff0000 !important;
-        font-weight: bold !important;
-        font-size: 20px !important;
         width: 100%;
     }
-    .footer-legal {
-        color: #ff4b4b;
-        font-size: 12px;
-        text-align: center;
-        margin-top: 50px;
-        border-top: 1px solid #444;
-        padding-top: 10px;
+    
+    .emergency-btn {
+        background: linear-gradient(90deg, #d00000, #9d0208) !important;
+        color: white !important;
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.5) !important;
     }
-    </style>
-    """, unsafe_allow_html=True)
+    
+    .emergency-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 0, 0, 0.7) !important;
+    }
+    
+    .register-btn {
+        background: linear-gradient(90deg, #0077b6, #0096c7) !important;
+        color: white !important;
+        box-shadow: 0 0 20px rgba(0, 119, 182, 0.5) !important;
+    }
+    
+    .register-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(0, 119, 182, 0.7) !important;
+    }
+    
+    .action-btn {
+        background: linear-gradient(90deg, #1a1a2e, #16213e) !important;
+        color: #90e0ef !important;
+        border: 1px solid #00b4d8 !important;
+        box-shadow: 0 0 15px rgba(0, 180, 216, 0.3) !important;
+    }
+    
+    .action-btn:hover {
+        transform: scale(1.03);
+        box-shadow: 0 0 25px rgba(0, 180, 216, 0.5) !important;
+    }
+    
+    /* Kart Stilleri */
+    .feature-card {
+        background: rgba(26, 26, 46, 0.8);
+        border-radius: 16px;
+        padding: 25px;
+        border: 1px solid #1e6091;
+        box-shadow: 0 0 25px rgba(0, 180, 216, 0.2);
+        height: 100%;
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0 35px rgba(0, 180, 216, 0.3);
+    }
+    
+    /* Uyarı Metni */
+    .legal-warning {
+        background: rgba(157, 2, 8, 0.1);
+        border-left: 4px solid #d00000;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 30px;
+        font-size: 0.9rem;
+    }
+    
+    /* Görsel Analiz Sonuçları */
+    .analysis-result {
+        background: rgba(0, 119, 182, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+        border: 1px solid #00b4d8;
+    }
+    
+    /* Konum Kartları */
+    .location-card {
+        background: rgba(26, 26, 46, 0.9);
+        border-radius: 12px;
+        padding: 15px;
+        margin: 10px 0;
+        border: 1px solid #1e6091;
+    }
+    
+    /* Responsive Tasarım */
+    @media (max-width: 768px) {
+        .main-title {
+            font-size: 2.5rem;
+        }
+        .feature-card {
+            padding: 15px;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# --- GEMINI AYARI ---
-# Not: API anahtarını Streamlit Secrets kısmına eklemelisin
-try:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash')
-except:
-    st.warning("Lütfen API anahtarını yapılandırın.")
-
-# --- ÜST MENÜ (Header) ---
-col1, col2, col3 = st.columns([1, 2, 1])
-with col1:
-    st.title("🌐 AIHEALTH")
+# Navigasyon butonları (Sağ üst köşe)
+col1, col2, col3 = st.columns([6, 1, 1])
+with col2:
+    if st.button("Kayıt Ol", key="register_top", help="Yeni hesap oluştur"):
+        st.session_state.show_register = True
 with col3:
-    if st.button("👤 Kayıt Ol"):
-        st.info("Kayıt sistemi yakında aktif edilecek.")
+    if st.button("ACİL", key="emergency_top", help="Acil durumda 112'yi ara"):
+        st.markdown('<meta http-equiv="refresh" content="0; url=tel:112">', unsafe_allow_html=True)
 
-# --- ANA İÇERİK ---
-st.write("### Yapay Zeka Destekli Sağlık ve İlk Yardım Asistanı")
+# Ana Başlık
+st.markdown('<h1 class="main-title">🏥 AIHEALTH</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Akıllı Sağlık Sistem Yardımcısı - Profesyonel Tıbbi Destek</p>', unsafe_allow_html=True)
 
-# Acil Durum Bölümü
-with st.container():
-    st.markdown('<div class="emergency-btn">', unsafe_allow_html=True)
-    if st.button("🚨 ACİL DURUM - 112'Yİ ARA"):
-        st.markdown("[112 Acil Çağrı Merkezini Ara](tel:112)")
-    st.markdown('</div>', unsafe_allow_html=True)
+# Ana İçerik Alanı
+col1, col2, col3 = st.columns(3)
 
-st.divider()
-
-# Özellik Sekmeleri
-tab1, tab2, tab3 = st.tabs(["💬 AI Chat Asistanı", "📸 Yara/Hasar Analizi", "🏥 Yakın Merkezler"])
-
-with tab1:
-    st.subheader("🤖 Sağlık Asistanına Sorun")
-    user_input = st.chat_input("Belirtilerinizi yazın veya ilk yardım bilgisi isteyin...")
-    if user_input:
-        with st.chat_message("user"):
-            st.write(user_input)
-        
-        # Yapay zeka yanıtı (Sistem talimatı ile birlikte)
-        prompt = f"Sen bir ilk yardım asistanısın. Kullanıcıya tıbbi tavsiye vermeden, sadece ilk yardım adımlarını anlat ve gerekirse acile yönlendir. Kullanıcı sorusu: {user_input}"
-        response = model.generate_content(prompt)
-        
-        with st.chat_message("assistant"):
-            st.write(response.text)
-
-with tab2:
-    st.subheader("📷 Görüntülü Analiz")
-    img_file = st.camera_input("Yaralanmanın fotoğrafını çekin")
-    if img_file:
-        st.success("Görüntü alındı. Analiz için Gemini Vision'a gönderiliyor...")
-        # Burada görüntüyü Gemini'ye gönderen fonksiyon çalışacak
-
-with tab3:
-    st.subheader("📍 En Yakın Sağlık Kurumları")
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("🏥 En Yakın Hastaneler"):
-            st.markdown("[Google Haritalar: Hastaneler](https://www.google.com/maps/search/hastane)")
-    with c2:
-        current_hour = datetime.now().hour
-        is_night = current_hour >= 19 or current_hour < 8
-        label = "🌙 Nöbetçi Eczaneler" if is_night else "💊 Eczaneler"
-        if st.button(label):
-            st.markdown(f"[Google Haritalar: {label}](https://www.google.com/maps/search/eczane)")
-
-# --- HUKUKİ UYARI (Sorumluluk Reddi) ---
-st.markdown("""
-    <div class="footer-legal">
-        ⚠️ <b>HUKUKİ UYARI:</b> AIHEALTH bir yapay zeka asistanıdır ve profesyonel tıbbi teşhis koyma yetkisine sahip değildir. 
-        Burada sunulan bilgiler sadece bilgilendirme amaçlıdır. Hayati tehlike durumunda derhal 112 Acil Servis'i arayınız. 
-        Uygulamayı kullanarak bu sorumluluğu kabul etmiş sayılırsınız.
-    </div>
-    """, unsafe_allow_html=True)
+with col1:
+    st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+    st.markdown("### 📸 Donanım Bazlı Fotoğraf Analizi")
+    st.markdown("Cihazınızın kamerasını kullanarak yaralı bölgeyi anında çekin ve AI analizi alın.")
+    
+    # Kameradan fotoğraf çekme
+    captured_image = st.camera_input("Yaralı bölgeyi çekmek için kamerayı kullanın", 
+                                     key="camera_input",
+                                     help="Doğrudan cihaz kameranıza bağlanır")
+    
+    if captured_image:
+        with st.spinner("Görsel AI analizi yapılıyor..."):
+            try:
+                # Görseli PIL formatına çevir
+                image = Image.open(captured_image)
+                
+                # Görseli base64 formatına çevir
+                buffered = io.BytesIO()
+                image.save(buffered, format="JPEG")
+                img_str = base64.b64encode(buffered.getvalue()).decode()
+                
+                # Gemini Vision API için hazırlık
+                model = genai.GenerativeModel('gemini-pro-vision
